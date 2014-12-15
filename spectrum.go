@@ -15,6 +15,10 @@ import (
 	"strings"
 )
 
+/*
+ * Two slices of floats is consodered to be faster than map[float64]float64,
+ * hence the former is used.
+ */
 type Spectrum struct {
 	// data    map[float64]float64 // X -> Y
 	x       []float64         // X
@@ -25,8 +29,8 @@ type Spectrum struct {
 // --------------------------------------------------------------------------
 // A Spectrum constructor
 func NewSpectrum(capacity int) *Spectrum {
-	// Map
-	// spec := Spectrum{make(map[float64]float64), make(map[string]string)}
+	//Map
+	//spec := Spectrum{make(map[float64]float64), make(map[string]string)}
 
 	// Map and x and y arrays
 	// spec := Spectrum{	make(map[float64]float64), make([]float64, 100),
@@ -88,21 +92,17 @@ func (spec *Spectrum) parseSpectrum(data []byte) {
 
 		fields := strings.Fields(line)
 
-		// FIXME there can be more valid columns, especially useless ones such
-		// as data from WinSpec software where the second column contains frame
-		// number which is useless for a spectrum:
-		// 238	  1    5643.43
-
-		if len(fields) != 2 {
-			// Not a point X,Y, must be a header
-			header, value := parseHeader(line)
-			headersmap[header] = value
-			continue
-		}
+		/*
+		 * FIXME there can be more valid columns, especially useless ones such
+		 * as data from WinSpec software where the second column contains frame
+		 * number (e.g. 1 here) which is useless for a spectrum:
+		 * 238	  1    5643.43
+		 */
 
 		x, errx := strconv.ParseFloat(fields[0], 64)
+		// if (len(fields) != 2) && (errx != nil) {
 		if errx != nil {
-			// This line seems to be a header, too
+			// Not a point X,Y hence must be a header
 			header, value := parseHeader(line)
 			headersmap[header] = value
 			continue
@@ -110,7 +110,7 @@ func (spec *Spectrum) parseSpectrum(data []byte) {
 
 		y, erry := strconv.ParseFloat(fields[1], 64)
 		if erry != nil {
-			// This line seems to be unknown stuff, since x is float
+			// This line seems to be unknown stuff, since X is known to be float
 			fmt.Println("Cannot parse line", line)
 			continue
 		}
@@ -123,23 +123,23 @@ func (spec *Spectrum) parseSpectrum(data []byte) {
 
 	// Make sorted slices of x and y
 	length := len(datamap)
-	xrange := make([]float64, length)
-	yrange := make([]float64, length)
+	x_range := make([]float64, length)
+	y_range := make([]float64, length)
 	index := 0
 
-	for k, _ := range datamap {
-		xrange[index] = k
+	for x := range datamap {
+		x_range[index] = x
 		index++
 	}
 
-	sort.Float64s(xrange)
+	sort.Float64s(x_range)
 
-	for i, x := range xrange {
-		yrange[i] = datamap[x]
+	for i, x := range x_range {
+		y_range[i] = datamap[x]
 	}
 
-	spec.x = xrange
-	spec.y = yrange
+	spec.x = x_range
+	spec.y = y_range
 }
 
 // --------------------------------------------------------------------------
