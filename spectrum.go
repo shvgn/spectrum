@@ -1,7 +1,7 @@
 // The code is provided "as is" without any warranty and shit.
-// You are free to copy, use and redistribute the code as you wish.
+// You are free to copy, use and redistribute the code in any way you wish.
 //
-// Evgenii Shevchenko
+// Evgeny Shevchenko
 // shvgn@protonmail.ch
 // 2015
 
@@ -36,11 +36,95 @@ type Spectrum struct {
 	meta map[string]string
 }
 
-// --------------------------------------------------------------------------
-// A Spectrum constructor
+// Constructor
 func NewSpectrum(capacity int) *Spectrum {
 	spec := Spectrum{make([][2]float64, capacity), make(map[string]string)}
 	return &spec
+}
+
+// Number of points in the spectrum data
+func (s *Spectrum) Len() int {
+	return len(s.data)
+}
+
+// String representation // FIXME the order of headers must not be randomized
+func (spec *Spectrum) String() string {
+	var buf bytes.Buffer
+	var lines []string
+
+	for xstr, ystr := range spec.meta {
+		lines = append(lines, fmt.Sprintf("%s\t%s\n", xstr, ystr))
+	}
+
+	sort.Strings(lines) // For consistent order  XXX WHY?
+	for _, line := range lines {
+		buf.WriteString(line)
+	}
+
+	for _, xy := range spec.data {
+		buf.WriteString(fmt.Sprintf("%f\t%f\n", xy[0], xy[1]))
+	}
+	return buf.String()
+}
+
+// Parse a header string
+func parseHeader(line string) (string, string) {
+	header := strings.TrimSpace(line)
+	index := strings.IndexAny(header, "\t:=")
+	if index > 0 && index < len(line) {
+		value := header[index+1:]
+		header = header[:index]
+		return header, value
+	}
+	parts := strings.Fields(line)
+	header = parts[0]
+	value := strings.Join(parts[1:], " ")
+	return header, value
+}
+
+// Read data file and return a new spectrum
+func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
+	// So we received cols. Now we decide which numbers of columns to take into
+	// the spectrum. We keep numbers starting from 1 im order to print these
+	// numbers in the below error if it occurs.
+	var xcol, ycol int
+	switch len(cols) {
+	case 0:
+		xcol = 1
+		ycol = 2
+	case 1:
+		xcol = 1
+		ycol = cols[0]
+	case 2:
+		xcol = cols[0]
+		ycol = cols[1]
+	default:
+		log.Fatal("Incorrect number of entries in ReadFromFile")
+	}
+	if xcol < 0 || ycol < 0 {
+		return nil, errors.New(fmt.Sprintf("Column indexes mut be positive, received xcol=%d ycol=%d", xcol, ycol))
+	}
+	xcol--
+	ycol--
+	// Now the columns numbers are hypothetic.
+
+	fi, err := os.Open(fname)
+	if err != nil {
+		fmt.Printf("Cannot open file <%s>\n", fname)
+		return nil, err
+	}
+	spec, err := ReadFromTSV(fi, xcol, ycol)
+	if err != nil {
+		// Try to parse in another way
+		var rawdata []byte
+		rawdata, err = ioutil.ReadFile(fname)
+		if err != nil {
+			fmt.Println("Cannot read file", fname, err.Error())
+			return nil, err
+		}
+		spec = parseSpectrum(rawdata, xcol, ycol)
+	}
+	return spec, err
 }
 
 // Reader for TSV files
@@ -48,22 +132,22 @@ func NewTSVReader(r io.Reader) *csv.Reader {
 	csvr := csv.NewReader(r)
 	csvr.Comma = '\t'
 	csvr.Comment = '#'
-	csvr.FieldsPerRecord = 0
+	csvr.FieldsPerRecord = 0 // The expected number of columns is derived from the first line
 	csvr.LazyQuotes = false
 	csvr.TrimLeadingSpace = true
 	return csvr
 }
 
 // Reading from TSV file, cols must contain numbers of columns to take into
-// account. If cols consists of one integer, the integer value is taken as Y.
-// If cols consists of two integers, they are taken as numbers of X and Y
-// columns in the passed TSV. If cols is not passed, then X defaults to 1 and Y
-// defaults to 2 as in ordinar 2-column ASCII TSV file. If len(cols)>2, the
-// error is returned
+// account. If cols consists of one integer, the integer value is taken as
+// number of the Y column. If cols consists of two integers, they are taken as
+// numbers of X and Y columns in the passed TSV. If cols is not passed, then X
+// defaults to 1 and Y defaults to 2 as in ordinar 2-column ASCII TSV file. If
+// len(cols)>2, the error is returned
 func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 
 	tsvreader := NewTSVReader(r)
-	records, err := tsvreader.ReadAll()
+	records, err := tsvreader.ReadAll() // [][]string
 	if err != nil {
 		return nil, err
 	}
@@ -90,51 +174,6 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 	return spec, nil
 }
 
-// Parse a slice of srings and make them float64s
-func parseFloat(str string) (float64, error) {
-	newstr := strings.TrimSpace(str)
-	newstr = strings.Replace(newstr, ",", ".", 1)
-	return strconv.ParseFloat(newstr, 64)
-}
-
-// --------------------------------------------------------------------------
-// String representation // FIXME the order of headers must not be randomized
-func (spec *Spectrum) String() string {
-	var buf bytes.Buffer
-	var lines []string
-
-	for xstring, ystring := range spec.meta {
-		lines = append(lines, fmt.Sprintf("%s\t%s\n", xstring, ystring))
-	}
-
-	sort.Strings(lines) // For consistent order  XXX WHY?
-	for _, line := range lines {
-		buf.WriteString(line)
-	}
-
-	for _, xy := range spec.data {
-		buf.WriteString(fmt.Sprintf("%f\t%f\n", xy[0], xy[1]))
-	}
-	return buf.String()
-}
-
-// --------------------------------------------------------------------------
-// Parse a header string
-func parseHeader(line string) (string, string) {
-	header := strings.TrimSpace(line)
-	index := strings.IndexAny(header, "\t:=")
-	if index > 0 && index < len(line) {
-		value := header[index+1:]
-		header = header[:index]
-		return header, value
-	}
-	parts := strings.Fields(line)
-	header = parts[0]
-	value := strings.Join(parts[1:], " ")
-	return header, value
-}
-
-// --------------------------------------------------------------------------
 // Parser for the the read data
 func parseSpectrum(data []byte, xcol, ycol int) *Spectrum {
 
@@ -172,9 +211,7 @@ func parseSpectrum(data []byte, xcol, ycol int) *Spectrum {
 		x_range[index] = x
 		index++
 	}
-
 	sort.Float64s(x_range)
-
 	for i, x := range x_range {
 		dataslice[i] = [...]float64{x, datamap[x]}
 	}
@@ -185,62 +222,13 @@ func parseSpectrum(data []byte, xcol, ycol int) *Spectrum {
 	return spec
 }
 
-// --------------------------------------------------------------------------
-// Read data file and return a new spectrum
-func SpectrumFromFile(fname string) (*Spectrum, error) {
-	spec, err := ReadFromFile(fname)
-	if err != nil {
-		return nil, err
-	}
-	return spec, nil
+// Parse a float64
+func parseFloat(s string) (float64, error) {
+	ns := strings.TrimSpace(s)
+	ns = strings.Replace(ns, ",", ".", 1)
+	return strconv.ParseFloat(ns, 64)
 }
 
-// --------------------------------------------------------------------------
-// Read data into an existing spectrum
-func ReadFromFile(fname string, cols ...int) (*Spectrum, error) {
-	// So we received cols. Now we decide which numbers of columns to take into
-	// the spectrum
-	var xcol, ycol int
-	switch len(cols) {
-	case 0:
-		xcol = 1
-		ycol = 2
-	case 1:
-		xcol = 1
-		ycol = cols[0]
-	case 2:
-		xcol = cols[0]
-		ycol = cols[1]
-	default:
-		log.Fatal("Incorrect number of entries in ReadFromFile")
-	}
-	xcol--
-	ycol--
-	if xcol < 0 || ycol < 0 {
-		return nil, errors.New(fmt.Sprintf("Column indexes mut be positive, received xcol=%d ycol=%d", xcol+1, ycol+1))
-	}
-
-	fi, err := os.Open(fname)
-	if err != nil {
-		fmt.Printf("Cannot open file <%s>\n", fname)
-		return nil, err
-	}
-	spec, err := ReadFromTSV(fi, xcol, ycol)
-	if err != nil {
-		// Try to parse in another way
-		var rawdata []byte
-		rawdata, err = ioutil.ReadFile(fname)
-		if err != nil {
-			fmt.Println("Cannot read file", fname, err.Error())
-			return nil, err
-		}
-		spec = parseSpectrum(rawdata, xcol, ycol)
-	}
-	return spec, err
-}
-
-//
-// --------------------------------------------------------------------------
 // Write spectrum to a file
 func (spec *Spectrum) WriteToFile(file string) error {
 	err := ioutil.WriteFile(file, []byte(spec.String()), 0600)
@@ -251,50 +239,6 @@ func (spec *Spectrum) WriteToFile(file string) error {
 	return nil
 }
 
-// --------------------------------------------------------------------------
-// Calculate noise level of the spectrum according to its minimum Y values distribution
-func (spec *Spectrum) Noise() float64 {
-	fmt.Println("WARNING! Noise() method is no implemented yet.")
-	return 0.0
-}
-
-// --------------------------------------------------------------------------
-// Calculate are under the spectrum
-func (spec *Spectrum) Area() float64 {
-	fmt.Println("WARNING! Area() method is no implemented yet.")
-	return 0.0
-
-}
-
-// --------------------------------------------------------------------------
-// Choose borders X1 and X2 to cut the spectrum X range
-func (spec *Spectrum) Cut(x1, x2 float64) {
-	fmt.Println("WARNING! Cut() method is no implemented yet.")
-
-}
-
-// --------------------------------------------------------------------------
-// Modify X with arbitrary function
-func (spec *Spectrum) ModifyX(modifier func(x float64) float64) {
-	fmt.Println("WARNING! ModifyX() method is no implemented yet.")
-
-}
-
-// --------------------------------------------------------------------------
-// Modify Y with arbitrary function
-func (spec *Spectrum) ModifyY(modifier func(x float64) float64) {
-	fmt.Println("WARNING! ModifyY() method is no implemented yet.")
-
-}
-
-// --------------------------------------------------------------------------
-// Take position of the spectrum maximum
-func (spec *Spectrum) MaxY() (float64, float64) {
-	fmt.Println("WARNING! MaxY() method is no implemented yet.")
-	return 0.0, 0.0
-}
-
-// --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 // TO IMPLEMENT
 // Spectra multiplication and division, merging/averaging
