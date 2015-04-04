@@ -48,11 +48,11 @@ func (s *Spectrum) Len() int {
 }
 
 // String representation // FIXME the order of headers must not be randomized
-func (spec *Spectrum) String() string {
+func (s *Spectrum) String() string {
 	var buf bytes.Buffer
 	var lines []string
 
-	for xstr, ystr := range spec.meta {
+	for xstr, ystr := range s.meta {
 		lines = append(lines, fmt.Sprintf("%s\t%s\n", xstr, ystr))
 	}
 
@@ -61,7 +61,7 @@ func (spec *Spectrum) String() string {
 		buf.WriteString(line)
 	}
 
-	for _, xy := range spec.data {
+	for _, xy := range s.data {
 		buf.WriteString(fmt.Sprintf("%f\t%f\n", xy[0], xy[1]))
 	}
 	return buf.String()
@@ -113,18 +113,23 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 		fmt.Printf("Cannot open file <%s>\n", fname)
 		return nil, err
 	}
-	spec, err := ReadFromTSV(fi, xcol, ycol)
+	defer fi.Close()
+
+	// We read we the TSV reader.
+	s, err := ReadFromTSV(fi, xcol, ycol)
 	if err != nil {
-		// Try to parse in another way
+		// Try read the spectrum in another way. Why we use TSV if this can
+		// handle all cases?
+		log.Println("Reading in TSV mode failed, using general ASCII mode.")
 		var rawdata []byte
 		rawdata, err = ioutil.ReadFile(fname)
 		if err != nil {
 			fmt.Println("Cannot read file", fname, err.Error())
 			return nil, err
 		}
-		spec = parseSpectrum(rawdata, xcol, ycol)
+		s = parseSpectrum(rawdata, xcol, ycol)
 	}
-	return spec, err
+	return s, err
 }
 
 // Reader for TSV files
