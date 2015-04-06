@@ -110,7 +110,6 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 
 	fi, err := os.Open(fname)
 	if err != nil {
-		fmt.Printf("Cannot open file <%s>\n", fname)
 		return nil, err
 	}
 	defer fi.Close()

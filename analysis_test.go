@@ -30,7 +30,8 @@ func TestRoundFloat64(t *testing.T) {
 	for _, p := range nums {
 		got := roundFloat64(p.orig, p.prec)
 		if got != p.want {
-			t.Errorf("roundFloat64(%q, %q) == %q, want %q", p.orig, p.prec, got, p.want)
+			t.Errorf("roundFloat64(%q, %q) == %q, want %q",
+				p.orig, p.prec, got, p.want)
 		}
 
 	}
