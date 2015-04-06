@@ -128,3 +128,10 @@ func (s *Spectrum) MaxAndEps() (float64, float64, float64) {
 	}
 	return xmax, ymax, eps
 }
+
+// Full width at half-maximum near the given X
+func (s *Spectrum) FWHM(x float64) float64 {
+	// Here I must calculate derivatives with noise-ignorant method such as
+	// Savitsky-Golay filter or Holoborodko's method
+	return 0.0
+}

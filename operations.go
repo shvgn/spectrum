@@ -53,7 +53,7 @@ func (s *Spectrum) Cut(x1, x2 float64) {
 
 }
 
-// Modify X with arbitrary function
+// Modify X with arbitrary function, ensures sorted X after the modification
 func (s *Spectrum) ModifyX(f func(x float64) float64) {
 	for i := range s.data {
 		s.data[i][0] = f(s.data[i][0])
