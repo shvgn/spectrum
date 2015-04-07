@@ -31,6 +31,10 @@ import (
  * meta is a map of strings
  */
 
+const (
+	commentPrefix = '#' // Lines starting with this rune will be ignored
+)
+
 type Spectrum struct {
 	data [][2]float64
 	meta map[string]string
@@ -119,14 +123,13 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 	if err != nil {
 		// Try read the spectrum in another way. Why we use TSV if this can
 		// handle all cases?
-		log.Println("Reading in TSV mode failed, using general ASCII mode.")
 		var rawdata []byte
 		rawdata, err = ioutil.ReadFile(fname)
 		if err != nil {
 			fmt.Println("Cannot read file", fname, err.Error())
 			return nil, err
 		}
-		s = parseSpectrum(rawdata, xcol, ycol)
+		s, err = parseSpectrum(rawdata, xcol, ycol)
 	}
 	return s, err
 }
@@ -135,7 +138,7 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 func NewTSVReader(r io.Reader) *csv.Reader {
 	csvr := csv.NewReader(r)
 	csvr.Comma = '\t'
-	csvr.Comment = '#'
+	csvr.Comment = commentPrefix
 	csvr.FieldsPerRecord = 0 // The expected number of columns is derived from the first line
 	csvr.LazyQuotes = false
 	csvr.TrimLeadingSpace = true
@@ -156,6 +159,9 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 		return nil, err
 	}
 
+	if len(records[0]) < ycol+1 {
+		return nil, csv.ErrFieldCount
+	}
 	data := make([][2]float64, len(records))
 	meta := make(map[string]string)
 	entry := [2]string{}
@@ -179,19 +185,22 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 }
 
 // Parser for the the read data
-func parseSpectrum(data []byte, xcol, ycol int) *Spectrum {
+func parseSpectrum(data []byte, xcol, ycol int) (*Spectrum, error) {
 
 	lines := strings.Split(string(data), "\n")
 	datamap := make(map[float64]float64)
 	metamap := make(map[string]string)
 
 	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			continue // Skip empty lines
+		if strings.TrimSpace(line) == "" ||
+			strings.HasPrefix(line, string(commentPrefix)) {
+			continue // Skip empty lines and comments
 		}
 
 		fields := strings.Fields(line)
-
+		if len(fields) < ycol+1 {
+			return nil, csv.ErrFieldCount
+		}
 		x, errx := parseFloat(fields[xcol])
 		y, erry := parseFloat(fields[ycol])
 		if errx != nil || erry != nil {
@@ -223,7 +232,7 @@ func parseSpectrum(data []byte, xcol, ycol int) *Spectrum {
 	spec := NewSpectrum(length)
 	spec.meta = metamap
 	spec.data = dataslice
-	return spec
+	return spec, nil
 }
 
 // Parse a float64
