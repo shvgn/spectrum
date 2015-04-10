@@ -106,7 +106,10 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 		log.Fatal("Incorrect number of entries in ReadFromFile")
 	}
 	if xcol < 0 || ycol < 0 {
-		return nil, errors.New(fmt.Sprintf("Column indexes mut be positive, received xcol=%d ycol=%d", xcol, ycol))
+		return nil, errors.New(
+			fmt.Sprintf(
+				"Column indexes mut be positive, received xcol=%d ycol=%d",
+				xcol, ycol))
 	}
 	xcol--
 	ycol--
@@ -243,8 +246,8 @@ func parseFloat(s string) (float64, error) {
 }
 
 // Write spectrum to a file
-func (spec *Spectrum) WriteToFile(file string) error {
-	err := ioutil.WriteFile(file, []byte(spec.String()), 0600)
+func (s *Spectrum) WriteToFile(file string) error {
+	err := ioutil.WriteFile(file, []byte(s.String()), 0600)
 	if err != nil {
 		fmt.Println("Cannot write to file", file, err.Error())
 		return err
