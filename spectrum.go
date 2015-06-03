@@ -172,8 +172,8 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 	for _, e := range records {
 		entry[0] = e[xcol]
 		entry[1] = e[ycol]
-		x, xerr := parseFloat(entry[0])
-		y, yerr := parseFloat(entry[1])
+		x, xerr := ParseFloat(entry[0])
+		y, yerr := ParseFloat(entry[1])
 		if xerr != nil || yerr != nil {
 			meta[entry[0]] = entry[1]
 		} else {
@@ -204,8 +204,8 @@ func parseSpectrum(data []byte, xcol, ycol int) (*Spectrum, error) {
 		if len(fields) < ycol+1 {
 			return nil, csv.ErrFieldCount
 		}
-		x, errx := parseFloat(fields[xcol])
-		y, erry := parseFloat(fields[ycol])
+		x, errx := ParseFloat(fields[xcol])
+		y, erry := ParseFloat(fields[ycol])
 		if errx != nil || erry != nil {
 			// Not a point X,Y hence must be a header
 			header, value := parseHeader(line)
@@ -239,7 +239,7 @@ func parseSpectrum(data []byte, xcol, ycol int) (*Spectrum, error) {
 }
 
 // Parse a float64
-func parseFloat(s string) (float64, error) {
+func ParseFloat(s string) (float64, error) {
 	ns := strings.TrimSpace(s)
 	ns = strings.Replace(ns, ",", ".", 1)
 	return strconv.ParseFloat(ns, 64)

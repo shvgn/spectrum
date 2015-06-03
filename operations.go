@@ -29,17 +29,32 @@ func (s *Spectrum) SortByY() { sort.Sort(dataSorterY(s.data)) }
 // Choose borders X1 and X2 to cut the spectrum X range
 func (s *Spectrum) Cut(x1, x2 float64) {
 	if x1 > x2 {
-		log.Fatal("X1 cannot be bigger than X2 in Filter() method")
+		log.Fatal("X1 cannot be bigger than X2 in Cut() method")
 	}
 	var i1, i2 int
-	startIndexKnown := false
+	var startIndexKnown, endIndexKnown bool
+	xmin := s.data[0][0]
+	xmax := s.data[s.Len()-1][0]
+	if x1 <= xmin {
+		startIndexKnown = true
+		i1 = 0
+	}
+	if x2 >= xmax {
+		endIndexKnown = true
+		i2 = s.Len()
+		if startIndexKnown {
+			return
+		}
+	}
 	for i, p := range s.data {
 		if !startIndexKnown && p[0] >= x1 {
-			i1 = i
-			startIndexKnown = true
+			i1, startIndexKnown = i, true
+			if endIndexKnown {
+				break
+			}
 		}
-		if startIndexKnown && p[0] > x2 {
-			i2 = i
+		if startIndexKnown && !endIndexKnown && p[0] > x2 {
+			i2, endIndexKnown = i, true
 			break
 		}
 	}
@@ -80,7 +95,7 @@ func arithOpFunc(sym rune) func(float64, float64) float64 {
 }
 
 // Function for arithmetic operation over two spectra. If X values do not
-// coincide, interpolation of the second specrum is used
+// coincide the interpolation of the second specrum is used
 func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	ol := newOverlap(s1, s2)
 	if ol.err != nil {

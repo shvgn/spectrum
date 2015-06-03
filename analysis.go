@@ -43,7 +43,7 @@ func (s *Spectrum) Noise() float64 {
 	}
 	distdata := make([][2]float64, len(ydist))
 	var i int
-	// y0 stands for the y value that has the biggest counter value
+	// y0 stands for the y that has the biggest counter value
 	var c0, y0 float64
 	for y, c := range ydist {
 		cf := float64(c)
@@ -55,9 +55,9 @@ func (s *Spectrum) Noise() float64 {
 		distdata[i][1] = cf
 		i++
 	}
-	// Now in this distribution [Y,C] sorted by Y's we are going to find the full
-	// width at half-maximum (l for left and r fot right) and the peak center
-	// is what we are looking for.
+	// Now in this distribution [Y,C] sorted by Y's we are going to find the
+	// full width at half-maximum (l for left and r fot right) and the counts
+	// peak center is what we are looking for.
 	sort.Sort(dataSorterX(distdata))
 	cl := c0
 	cr := cl
@@ -78,8 +78,8 @@ func (s *Spectrum) Noise() float64 {
 			}
 		}
 	}
-	yCenter := 0.5 * (yl + yr)
-	return yCenter
+	// Return the center of the FWHM of the [Y,C] peak
+	return 0.5 * (yl + yr)
 }
 
 // Calculate area under the spectrum with the trapezoidal method
