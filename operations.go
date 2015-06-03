@@ -31,13 +31,19 @@ func (s *Spectrum) Cut(x1, x2 float64) {
 	if x1 > x2 {
 		log.Fatal("X1 cannot be bigger than X2 in Filter() method")
 	}
-	filtered := [][2]float64{}
-	for _, p := range s.data {
-		if p[0] >= x1 && p[0] <= x2 {
-			filtered = append(filtered, p)
+	var i1, i2 int
+	startIndexKnown := false
+	for i, p := range s.data {
+		if !startIndexKnown && p[0] >= x1 {
+			i1 = i
+			startIndexKnown = true
+		}
+		if startIndexKnown && p[0] > x2 {
+			i2 = i
+			break
 		}
 	}
-	s.data = filtered
+	s.data = s.data[i1:i2]
 }
 
 // Modifies X with arbitrary function, ensures sorted X after the modification

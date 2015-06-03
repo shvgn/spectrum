@@ -249,7 +249,7 @@ func parseFloat(s string) (float64, error) {
 func (s *Spectrum) WriteToFile(file string) error {
 	err := ioutil.WriteFile(file, []byte(s.String()), 0600)
 	if err != nil {
-		fmt.Println("Cannot write to file", file, err.Error())
+		// fmt.Println("Cannot write to file", file, err.Error())
 		return err
 	}
 	return nil
@@ -257,8 +257,6 @@ func (s *Spectrum) WriteToFile(file string) error {
 
 // --------------------------------------------------------------------------
 // TO IMPLEMENT
-// Spectra multiplication and division, merging/averaging
-// Spectra addition and subtraction
 // Smoothing
 // Splicing
 // Peaks analisys: FWHM, Gauss/Lorenz fitting... maybe
