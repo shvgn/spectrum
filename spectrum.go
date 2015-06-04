@@ -121,7 +121,7 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 	}
 	defer fi.Close()
 
-	// We read we the TSV reader.
+	// We read with the TSV reader.
 	s, err := ReadFromTSV(fi, xcol, ycol)
 	if err != nil {
 		// Try read the spectrum in another way. Why we use TSV if this can
@@ -129,7 +129,7 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 		var rawdata []byte
 		rawdata, err = ioutil.ReadFile(fname)
 		if err != nil {
-			fmt.Println("Cannot read file", fname, err.Error())
+			// fmt.Println("Cannot read file", fname, err.Error())
 			return nil, err
 		}
 		s, err = parseSpectrum(rawdata, xcol, ycol)

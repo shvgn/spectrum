@@ -43,7 +43,7 @@ func (s *Spectrum) Noise() float64 {
 	}
 	distdata := make([][2]float64, len(ydist))
 	var i int
-	// y0 stands for the y that has the biggest counter value
+	// y0 stands for the y that has the biggest counter value c0
 	var c0, y0 float64
 	for y, c := range ydist {
 		cf := float64(c)
@@ -115,7 +115,7 @@ func (s *Spectrum) MaxAndEps() (float64, float64, float64) {
 	}
 	// Make a copy to modify freely
 	revdata := make([][2]float64, l)
-	copy(s.data, revdata)
+	copy(revdata, s.data)
 	sort.Sort(dataSorterY(revdata))
 	xmax = revdata[l-1][0]
 	ymax = revdata[l-1][1]
