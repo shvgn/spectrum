@@ -28,37 +28,11 @@ func (s *Spectrum) SortByY() { sort.Sort(dataSorterY(s.data)) }
 
 // Choose borders X1 and X2 to cut the spectrum X range
 func (s *Spectrum) Cut(x1, x2 float64) {
-	if x1 > x2 {
+	i1, i2, err := FindBordersIndexes(s.data, x1, x2)
+	if err != nil {
 		log.Fatal("X1 cannot be bigger than X2 in Cut() method")
 	}
-	var i1, i2 int
-	var startIndexKnown, endIndexKnown bool
-	xmin := s.data[0][0]
-	xmax := s.data[s.Len()-1][0]
-	if x1 <= xmin {
-		startIndexKnown = true
-		i1 = 0
-	}
-	if x2 >= xmax {
-		endIndexKnown = true
-		i2 = s.Len()
-		if startIndexKnown {
-			return
-		}
-	}
-	for i, p := range s.data {
-		if !startIndexKnown && p[0] >= x1 {
-			i1, startIndexKnown = i, true
-			if endIndexKnown {
-				break
-			}
-		}
-		if startIndexKnown && !endIndexKnown && p[0] > x2 {
-			i2, endIndexKnown = i, true
-			break
-		}
-	}
-	s.data = s.data[i1:i2]
+	s.data = s.data[i1 : i2+1]
 }
 
 // Modifies X with arbitrary function, ensures sorted X after the modification
@@ -105,22 +79,23 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	f := arithOpFunc(op)
 	l1 := ol.i1r - ol.i1l + 1
 	l2 := ol.i2r - ol.i2l + 1
-	data := make([][2]float64, l1)
+	data := make([][2]float64, l1) // The result size wiil be the one of s1
 
 	// First we shall see if X axes coincise and spectra can be operated.
 	// If l1 == l2 then X1 and X2 must coincise but they can still be shifted
 	// in their indexes
 	if l1 == l2 {
 		for j := 0; j < l1; j++ {
-			data[j][0] = s1.data[j+ol.i1l][0]                          // x
+			data[j][0] = s1.data[j+ol.i1l][0] // x
+			// FIXME Those x1 and x2 could be close on the overlapping interval
+			// but may not coincise fully. Check that! E.g. check steps and values.
 			data[j][1] = f(s1.data[j+ol.i1l][1], s2.data[j+ol.i2l][1]) // y
 		}
-		s1.data = data
+		s1.data = data // Here we cut s1
 		return nil
 	}
 
 	// If X ranges do not coincise Y2 is reduced to the interpolated over X1
-
 	// Filling slices #1
 	x1slc := make([]float64, l1)
 	y1slc := make([]float64, l1)

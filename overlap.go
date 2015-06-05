@@ -26,36 +26,51 @@ func newOverlap(s1, s2 *Spectrum) *overlap {
 	x1r := s1.data[len(s1.data)-1][0] // x1 right
 	x2l := s2.data[0][0]              // x2 left
 	x2r := s2.data[len(s2.data)-1][0] // x2 right
-	ol.xl = math.Max(x1l, x2l)        // Maximum of minimums
-	ol.xr = math.Min(x1r, x2r)        // Minimum of maximums
+	ol.xl = math.Max(x1l, x2l)        // Maximum of the minima
+	ol.xr = math.Min(x1r, x2r)        // Minimum of the maxima
 	if ol.xl > ol.xr {
 		ol.xl, ol.xr = 0.0, 0.0
 		ol.err = errors.New("X ranges do not overlap")
 		return ol
 	}
-	ol.i1l, ol.i1r = findBordersIndexes(s1.data, ol.xl, ol.xr)
-	ol.i2l, ol.i2r = findBordersIndexes(s2.data, ol.xl, ol.xr)
+	ol.i1l, ol.i1r, _ = FindBordersIndexes(s1.data, ol.xl, ol.xr)
+	ol.i2l, ol.i2r, _ = FindBordersIndexes(s2.data, ol.xl, ol.xr)
 	return ol
 }
 
-// Find indices of data borders
-func findBordersIndexes(data [][2]float64, xLeft, xRight float64) (int, int) {
+// Find indices of data borders. The data is assumed to be sorted. xLeft and
+// xRight shall not be swapped automatically. If x1 is less then X minimum, i1
+// shall be 0, and in the same manner i2 will be the last index of the data if
+// x2 is bigger than X maximum.
+func FindBordersIndexes(data [][2]float64, x1, x2 float64) (int, int, error) {
+	var err error
+	if x1 >= x2 {
+		return -1, -1, errors.New("FindBorderIndexes: x1 >= x2")
+	}
 	var i1, i2 int
-	foundLeft, foundRight := false, false
-	for i, p := range data {
-		if foundLeft && foundRight {
-			break
-		}
-		if !foundLeft && p[0] >= xLeft {
-			i1 = i
-			foundLeft = true
-		}
-		if p[0] <= xRight {
-			i2 = i
-		} else {
-			foundRight = true
+	var found1, found2 bool
+	xmin := data[0][0]
+	xmax := data[len(data)-1][0]
+	if x1 <= xmin {
+		i1, found1 = 0, true
+	}
+	if x2 >= xmax {
+		i2, found2 = len(data)-1, true
+		if found1 {
+			return i1, i2, nil
 		}
 	}
-	return i1, i2
-
+	for i, p := range data {
+		if !found1 && p[0] >= x1 {
+			i1, found1 = i, true
+			if found2 {
+				break
+			}
+		}
+		if found1 && !found2 && p[0] > x2 {
+			i2, found2 = i-1, true
+			break
+		}
+	}
+	return i1, i2, err
 }
