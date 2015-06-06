@@ -28,6 +28,7 @@ func (s *Spectrum) SortByY() { sort.Sort(dataSorterY(s.data)) }
 
 // Choose borders X1 and X2 to cut the spectrum X range
 func (s *Spectrum) Cut(x1, x2 float64) {
+	// FIXME what about one-side cut?
 	i1, i2, err := FindBordersIndexes(s.data, x1, x2)
 	if err != nil {
 		log.Fatal("X1 cannot be bigger than X2 in Cut() method")
@@ -79,17 +80,24 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	f := arithOpFunc(op)
 	l1 := ol.i1r - ol.i1l + 1
 	l2 := ol.i2r - ol.i2l + 1
-	data := make([][2]float64, l1) // The result size wiil be the one of s1
 
-	// First we shall see if X axes coincise and spectra can be operated.
-	// If l1 == l2 then X1 and X2 must coincise but they can still be shifted
-	// in their indexes
+	data := make([][2]float64, 0, l1) // The result size will be the one of s1
+	data1 := s1.data[ol.i1l : ol.i1r+1]
+	data2 := s2.data[ol.i2l : ol.i2r+1]
+
+	// First we shall see if X axes coincise and spectra can be operated. This
+	// is useful for data obtained on one setup. If l1 == l2 then X1 and X2
+	// must coincise but they can still be shifted in their indexes
 	if l1 == l2 {
-		for j := 0; j < l1; j++ {
-			data[j][0] = s1.data[j+ol.i1l][0] // x
-			// FIXME Those x1 and x2 could be close on the overlapping interval
-			// but may not coincise fully. Check that! E.g. check steps and values.
-			data[j][1] = f(s1.data[j+ol.i1l][1], s2.data[j+ol.i2l][1]) // y
+		for j, p := range data1 {
+			x1, y1 := p[0], p[1]
+			x2, y2 := data2[j][0], data2[j][1]
+			if x1 != x2 {
+				// They don't coincise
+				data = make([][2]float64, 0, l1)
+				break
+			}
+			data = append(data, [2]float64{x1, f(y1, y2)})
 		}
 		s1.data = data // Here we cut s1
 		return nil
@@ -97,28 +105,28 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 
 	// If X ranges do not coincise Y2 is reduced to the interpolated over X1
 	// Filling slices #1
-	x1slc := make([]float64, l1)
-	y1slc := make([]float64, l1)
-	for j := ol.i1l; j <= ol.i1r; j++ {
-		x1slc[j-ol.i1l] = s1.data[j][0]
-		y1slc[j-ol.i1l] = s1.data[j][1]
+	xa1 := make([]float64, 0, l1)
+	ya1 := make([]float64, 0, l1)
+	for _, p := range data1 {
+		xa1 = append(xa1, p[0])
+		ya1 = append(ya1, p[1])
 	}
 
 	// Filling slices #2
-	x2slc := make([]float64, l2)
-	y2slc := make([]float64, l2)
-	for j := ol.i2l; j <= ol.i2r; j++ {
-		x2slc[j-ol.i2l] = s2.data[j][0]
-		y2slc[j-ol.i2l] = s2.data[j][1]
+	xa2 := make([]float64, l2)
+	ya2 := make([]float64, l2)
+	for _, p := range data2 {
+		xa2 = append(xa2, p[0])
+		ya2 = append(ya2, p[1])
 	}
 
 	// Cubic spline
 	var cb *spline.Cubic
-	cb = spline.NewCubic(x2slc, y2slc)
-	y2slc = cb.Evaluate(x1slc)
+	cb = spline.NewCubic(xa2, ya2)
+	ya2 = cb.Evaluate(xa1)
 
-	for i, x := range x1slc {
-		data[i] = [2]float64{x, f(y1slc[i], y2slc[i])}
+	for i, x := range xa1 {
+		data = append(data, [2]float64{x, f(ya1[i], ya2[i])})
 	}
 	s1.data = data
 	return nil
