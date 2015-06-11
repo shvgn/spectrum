@@ -74,6 +74,11 @@ func arithOpFunc(sym rune) func(float64, float64) float64 {
 func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	ol := newOverlap(s1, s2)
 	if ol.err != nil {
+		log.Println("Error in overlap")
+		log.Println("Headers os s1:")
+		log.Println(s1.meta)
+		log.Println("Headers os s2:")
+		log.Println(s2.meta)
 		return ol.err
 	}
 
@@ -89,18 +94,22 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	// is useful for data obtained on one setup. If l1 == l2 then X1 and X2
 	// must coincise but they can still be shifted in their indexes
 	if l1 == l2 {
+		ok := true
 		for j, p := range data1 {
 			x1, y1 := p[0], p[1]
 			x2, y2 := data2[j][0], data2[j][1]
 			if x1 != x2 {
-				// They don't coincise
+				// They don't coincise. Clear the data and go another way
 				data = make([][2]float64, 0, l1)
+				ok = false
 				break
 			}
 			data = append(data, [2]float64{x1, f(y1, y2)})
 		}
-		s1.data = data // Here we cut s1
-		return nil
+		if ok {
+			s1.data = data // Here we cut s1
+			return nil
+		}
 	}
 
 	// If X ranges do not coincise Y2 is reduced to the interpolated over X1
@@ -113,8 +122,8 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	}
 
 	// Filling slices #2
-	xa2 := make([]float64, l2)
-	ya2 := make([]float64, l2)
+	xa2 := make([]float64, 0, l2)
+	ya2 := make([]float64, 0, l2)
 	for _, p := range data2 {
 		xa2 = append(xa2, p[0])
 		ya2 = append(ya2, p[1])
@@ -133,21 +142,21 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 }
 
 // Adds spectrum to the current one
-func (s *Spectrum) Add(ss *Spectrum) {
-	doArithOperation(s, ss, '+')
+func (s *Spectrum) Add(ss *Spectrum) error {
+	return doArithOperation(s, ss, '+')
 }
 
 // Subtract spectrum from the current one
-func (s *Spectrum) Subtract(ss *Spectrum) {
-	doArithOperation(s, ss, '-')
+func (s *Spectrum) Subtract(ss *Spectrum) error {
+	return doArithOperation(s, ss, '-')
 }
 
 // Multiply spectrum by the current one
-func (s *Spectrum) Multiply(ss *Spectrum) {
-	doArithOperation(s, ss, '*')
+func (s *Spectrum) Multiply(ss *Spectrum) error {
+	return doArithOperation(s, ss, '*')
 }
 
 // Divide spectrum by the current one
-func (s *Spectrum) Divide(ss *Spectrum) {
-	doArithOperation(s, ss, '/')
+func (s *Spectrum) Divide(ss *Spectrum) error {
+	return doArithOperation(s, ss, '/')
 }

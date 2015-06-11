@@ -103,7 +103,7 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 		xcol = cols[0]
 		ycol = cols[1]
 	default:
-		log.Fatal("Incorrect number of entries in ReadFromFile")
+		log.Fatal("Incorrect number of entries in SpectrumFromFile")
 	}
 	if xcol < 0 || ycol < 0 {
 		return nil, errors.New(
