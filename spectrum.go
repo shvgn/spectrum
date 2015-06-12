@@ -187,12 +187,12 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 	return spec, nil
 }
 
-// Parser for the the read data
-func parseSpectrum(data []byte, xcol, ycol int) (*Spectrum, error) {
+// Text parser
+func parseSpectrum(b []byte, xcol, ycol int) (*Spectrum, error) {
 
-	lines := strings.Split(string(data), "\n")
-	datamap := make(map[float64]float64)
-	metamap := make(map[string]string)
+	lines := strings.Split(string(b), "\n")
+	data := make([][2]float64, 0, len(lines))
+	meta := map[string]string{}
 
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" ||
@@ -207,38 +207,21 @@ func parseSpectrum(data []byte, xcol, ycol int) (*Spectrum, error) {
 		x, errx := ParseFloat(fields[xcol])
 		y, erry := ParseFloat(fields[ycol])
 		if errx != nil || erry != nil {
-			// Not a point X,Y hence must be a header
+			// Not a point x,y hence must be a header
 			header, value := parseHeader(line)
-			metamap[header] = value
+			meta[header] = value
 			continue
 		}
-
-		// Ok here, x and y are valid float64's
-		datamap[x] = y
+		// valid float64's
+		data = append(data, [2]float64{x, y})
 	}
 
-	// Make sorted slices of x and y
-	length := len(datamap)
-	x_range := make([]float64, length)
-	index := 0
-	dataslice := make([][2]float64, length)
-
-	for x := range datamap {
-		x_range[index] = x
-		index++
-	}
-	sort.Float64s(x_range)
-	for i, x := range x_range {
-		dataslice[i] = [...]float64{x, datamap[x]}
-	}
-
-	spec := NewSpectrum(length)
-	spec.meta = metamap
-	spec.data = dataslice
-	return spec, nil
+	s := &Spectrum{meta: meta, data: data}
+	s.SortByX()
+	return s, nil
 }
 
-// Parse a float64
+// Parse a float64 with comma as a delimiter
 func ParseFloat(s string) (float64, error) {
 	ns := strings.TrimSpace(s)
 	ns = strings.Replace(ns, ",", ".", 1)
@@ -249,7 +232,6 @@ func ParseFloat(s string) (float64, error) {
 func (s *Spectrum) WriteToFile(file string) error {
 	err := ioutil.WriteFile(file, []byte(s.String()), 0600)
 	if err != nil {
-		// fmt.Println("Cannot write to file", file, err.Error())
 		return err
 	}
 	return nil
