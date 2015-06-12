@@ -100,6 +100,17 @@ func (s *Spectrum) Area() float64 {
 
 }
 
+// Get X and Y of the first spectrum point
+func (s *Spectrum) FirstPoint() (float64, float64) {
+	return s.data[0][0], s.data[0][1]
+}
+
+// Get X and Y of the last spectrum point
+func (s *Spectrum) LastPoint() (float64, float64) {
+	k := len(s.data) - 1
+	return s.data[k][0], s.data[k][1]
+}
+
 // The spectrum maximum point X Y
 func (s *Spectrum) MaxY() (float64, float64) {
 	x, y, _ := s.MaxAndEps()
