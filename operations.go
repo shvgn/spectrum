@@ -31,7 +31,7 @@ func (s *Spectrum) Cut(x1, x2 float64) {
 	// FIXME what about one-side cut?
 	i1, i2, err := FindBordersIndexes(s.data, x1, x2)
 	if err != nil {
-		log.Fatal("X1 cannot be bigger than X2 in Cut() method")
+		log.Fatal("x1 cannot be bigger than x2")
 	}
 	s.data = s.data[i1 : i2+1]
 }
@@ -72,21 +72,22 @@ func arithOpFunc(sym rune) func(float64, float64) float64 {
 // Function for arithmetic operation over two spectra. If X values do not
 // coincide the interpolation of the second specrum is used
 func doArithOperation(s1, s2 *Spectrum, op rune) error {
-	ol := newOverlap(s1, s2)
-	if ol.err != nil {
+	ol, err := newOverlap(s1, s2)
+
+	if err != nil {
 		log.Println("Error in overlap")
-		log.Println("Headers os s1:")
+		log.Println("Headers of s1:")
 		log.Println(s1.meta)
-		log.Println("Headers os s2:")
+		log.Println("Headers of s2:")
 		log.Println(s2.meta)
-		return ol.err
+		return err
 	}
 
 	f := arithOpFunc(op)
 	l1 := ol.i1r - ol.i1l + 1
 	l2 := ol.i2r - ol.i2l + 1
 
-	data := make([][2]float64, 0, l1) // The result size will be the one of s1
+	data := make([][2]float64, l1, l1) // The result size will be the one of s1
 	data1 := s1.data[ol.i1l : ol.i1r+1]
 	data2 := s2.data[ol.i2l : ol.i2r+1]
 
@@ -94,7 +95,7 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	// is useful for data obtained on one setup. If l1 == l2 then X1 and X2
 	// must coincise but they can still be shifted in their indexes
 	if l1 == l2 {
-		ok := true
+		ok := true // The things-go-fine indicator
 		for j, p := range data1 {
 			x1, y1 := p[0], p[1]
 			x2, y2 := data2[j][0], data2[j][1]
@@ -104,7 +105,7 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 				ok = false
 				break
 			}
-			data = append(data, [2]float64{x1, f(y1, y2)})
+			data[j] = [2]float64{x1, f(y1, y2)}
 		}
 		if ok {
 			s1.data = data // Here we cut s1
@@ -114,19 +115,19 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 
 	// If X ranges do not coincise Y2 is reduced to the interpolated over X1
 	// Filling slices #1
-	xa1 := make([]float64, 0, l1)
-	ya1 := make([]float64, 0, l1)
-	for _, p := range data1 {
-		xa1 = append(xa1, p[0])
-		ya1 = append(ya1, p[1])
+	xa1 := make([]float64, l1, l1)
+	ya1 := make([]float64, l1, l1)
+	for i, p := range data1 {
+		xa1[i] = p[0]
+		ya1[i] = p[1]
 	}
 
 	// Filling slices #2
-	xa2 := make([]float64, 0, l2)
-	ya2 := make([]float64, 0, l2)
-	for _, p := range data2 {
-		xa2 = append(xa2, p[0])
-		ya2 = append(ya2, p[1])
+	xa2 := make([]float64, l2, l2)
+	ya2 := make([]float64, l2, l2)
+	for i, p := range data2 {
+		xa2[i] = p[0]
+		ya2[i] = p[1]
 	}
 
 	// Cubic spline
@@ -134,8 +135,9 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 	cb = spline.NewCubic(xa2, ya2)
 	ya2 = cb.Evaluate(xa1)
 
+	data = make([][2]float64, l1, l1) // Cleaned data
 	for i, x := range xa1 {
-		data = append(data, [2]float64{x, f(ya1[i], ya2[i])})
+		data[i] = [2]float64{x, f(ya1[i], ya2[i])}
 	}
 	s1.data = data
 	return nil

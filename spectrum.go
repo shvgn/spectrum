@@ -105,7 +105,7 @@ func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
 	default:
 		log.Fatal("Incorrect number of entries in SpectrumFromFile")
 	}
-	if xcol < 0 || ycol < 0 {
+	if xcol < 1 || ycol < 1 {
 		return nil, errors.New(
 			fmt.Sprintf(
 				"Column indexes mut be positive, received xcol=%d ycol=%d",
@@ -165,7 +165,7 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 	if len(records[0]) < ycol+1 {
 		return nil, csv.ErrFieldCount
 	}
-	data := make([][2]float64, len(records))
+	data := make([][2]float64, 0)
 	meta := make(map[string]string)
 	entry := [2]string{}
 	var i int = 0
@@ -177,11 +177,11 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 		if xerr != nil || yerr != nil {
 			meta[entry[0]] = entry[1]
 		} else {
-			data[i] = [2]float64{x, y}
+			data = append(data, [2]float64{x, y})
 			i++
 		}
 	}
-	spec := NewSpectrum(len(data))
+	spec := &Spectrum{}
 	spec.data = data
 	spec.meta = meta
 	return spec, nil
