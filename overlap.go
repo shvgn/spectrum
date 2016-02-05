@@ -20,6 +20,8 @@ type overlap struct {
 // newOverlap checks whether two spectra overlap. If the do, the function
 // returns the overlap structure or returns an error otherwise
 func newOverlap(s1, s2 *Spectrum) (ol *overlap, err error) {
+	ol = new(overlap)
+
 	x1l := s1.data[0][0] // x1 left
 	x2l := s2.data[0][0] // x2 left
 
