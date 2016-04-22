@@ -1,15 +1,10 @@
-// The code is provided "as is" without any warranty and whatever.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
+// Package xy is a simple library for manipulation of X,Y data
 
 package xy
 
 import "testing"
 
-var sp1 Spectrum = Spectrum{
+var sp1 XY = XY{
 	[][2]float64{
 		[2]float64{1.0, 5.34047454734599},
 		[2]float64{2.0, 5.56134762834134},
@@ -33,7 +28,7 @@ var sp1 Spectrum = Spectrum{
 		[2]float64{20.0, 9.86752255959972}}, nil}
 
 // Shifted X of sp1, the same function
-var sp1s Spectrum = Spectrum{
+var sp1s XY = XY{
 	[][2]float64{
 		[2]float64{1.431, 5.42442917648117},
 		[2]float64{2.431, 5.68780485174319},
@@ -56,7 +51,7 @@ var sp1s Spectrum = Spectrum{
 		[2]float64{19.431, 10.5437428259392},
 		[2]float64{20.431, 9.372915167086}}, nil}
 
-var sp2 Spectrum = Spectrum{
+var sp2 XY = XY{
 	[][2]float64{
 		[2]float64{1.0, 5.13945037358082},
 		[2]float64{2.0, 5.35474279421912},
@@ -80,7 +75,7 @@ var sp2 Spectrum = Spectrum{
 		[2]float64{20.0, 5.26446496710796}}, nil}
 
 // Check for data equality in two spectra
-func equal(s1, s2 Spectrum) bool {
+func equal(s1, s2 XY) bool {
 	for i, p1 := range s1.data {
 		p2 := s2.data[i]
 		if p1 != p2 {

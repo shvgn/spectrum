@@ -1,9 +1,4 @@
-// The code is provided "as is" without any warranty and whatever.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
+// Package xy is a simple library for manipulation of X,Y data
 
 package xy
 
@@ -19,7 +14,7 @@ type overlap struct {
 
 // newOverlap checks whether two spectra overlap. If the do, the function
 // returns the overlap structure or returns an error otherwise
-func newOverlap(s1, s2 *Spectrum) (ol *overlap, err error) {
+func newOverlap(s1, s2 *XY) (ol *overlap, err error) {
 	ol = new(overlap)
 
 	x1l := s1.data[0][0] // x1 left

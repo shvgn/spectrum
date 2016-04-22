@@ -1,9 +1,4 @@
-// The code is provided "as is" without any warranty and whatever.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
+// Package xy is a simple library for manipulation of X,Y data
 
 package xy
 
@@ -35,24 +30,24 @@ const (
 	commentPrefix = '#' // Lines starting with this rune will be ignored
 )
 
-type Spectrum struct {
+type XY struct {
 	data [][2]float64
 	meta map[string]string
 }
 
 // Constructor
-func NewSpectrum(capacity int) *Spectrum {
-	spec := Spectrum{make([][2]float64, capacity), make(map[string]string)}
+func NewSpectrum(capacity int) *XY {
+	spec := XY{make([][2]float64, capacity), make(map[string]string)}
 	return &spec
 }
 
 // Number of points in the spectrum data
-func (s *Spectrum) Len() int {
+func (s *XY) Len() int {
 	return len(s.data)
 }
 
 // String representation // FIXME the order of headers must not be randomized
-func (s *Spectrum) String() string {
+func (s *XY) String() string {
 	var buf bytes.Buffer
 	var lines []string
 
@@ -87,7 +82,7 @@ func parseHeader(line string) (string, string) {
 }
 
 // Read data file and return a new spectrum
-func SpectrumFromFile(fname string, cols ...int) (*Spectrum, error) {
+func SpectrumFromFile(fname string, cols ...int) (*XY, error) {
 	// So we received cols. Now we decide which numbers of columns to take into
 	// the spectrum. We keep numbers starting from 1 im order to print these
 	// numbers in the below error if it occurs.
@@ -154,7 +149,7 @@ func NewTSVReader(r io.Reader) *csv.Reader {
 // numbers of X and Y columns in the passed TSV. If cols is not passed, then X
 // defaults to 1 and Y defaults to 2 as in ordinar 2-column ASCII TSV file. If
 // len(cols)>2, the error is returned
-func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
+func ReadFromTSV(r io.Reader, xcol, ycol int) (*XY, error) {
 
 	tsvreader := NewTSVReader(r)
 	records, err := tsvreader.ReadAll() // [][]string
@@ -181,14 +176,14 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*Spectrum, error) {
 			i++
 		}
 	}
-	spec := &Spectrum{}
+	spec := &XY{}
 	spec.data = data
 	spec.meta = meta
 	return spec, nil
 }
 
 // Text parser
-func parseSpectrum(b []byte, xcol, ycol int) (*Spectrum, error) {
+func parseSpectrum(b []byte, xcol, ycol int) (*XY, error) {
 
 	lines := strings.Split(string(b), "\n")
 	data := make([][2]float64, 0, len(lines))
@@ -216,7 +211,7 @@ func parseSpectrum(b []byte, xcol, ycol int) (*Spectrum, error) {
 		data = append(data, [2]float64{x, y})
 	}
 
-	s := &Spectrum{meta: meta, data: data}
+	s := &XY{meta: meta, data: data}
 	s.SortByX()
 	return s, nil
 }
@@ -229,7 +224,7 @@ func ParseFloat(s string) (float64, error) {
 }
 
 // Write spectrum to a file
-func (s *Spectrum) WriteToFile(file string) error {
+func (s *XY) WriteToFile(file string) error {
 	err := ioutil.WriteFile(file, []byte(s.String()), 0600)
 	if err != nil {
 		return err

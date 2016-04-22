@@ -1,9 +1,5 @@
-// The code is provided "as is" without any warranty and whatever.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
+// Package xy is a simple library for manipulation of X,Y data
+
 package xy
 
 import (
@@ -13,7 +9,7 @@ import (
 )
 
 const (
-	PRECISION_ORDER int = 4 // Precision for rounding and calculations
+	precisionOrder int = 4 // Precision for rounding and calculations
 )
 
 // Rounding for float64
@@ -22,15 +18,15 @@ func roundFloat64(f float64, prec int) float64 {
 	return math.Floor(f*shift+0.5) / shift
 }
 
-// Calculate noise level of the spectrum according to its minimum Y values
-// distribution
-func (s *Spectrum) Noise() float64 {
+// Noise naively calculates noise level of the dataset according to its minimum Y values
+// distribution. The more noise in the dataset the better it is calculated
+func (s *XY) Noise() float64 {
 	ydist := map[float64]int{}
 	// Choose the precision
 	_, ymax, eps := s.MaxAndEps()
 	prec := int(math.Log10(ymax / eps))
-	if prec < PRECISION_ORDER {
-		prec = PRECISION_ORDER
+	if prec < precisionOrder {
+		prec = precisionOrder
 	}
 	// Populate the distribution
 	for _, p := range s.data {
@@ -43,7 +39,8 @@ func (s *Spectrum) Noise() float64 {
 	}
 	distdata := make([][2]float64, len(ydist))
 	var i int
-	// y0 stands for the y that has the biggest counter value c0
+	// y0 stands for the y that has the biggest counter value c0,
+	// namely the peak of the noise distribution
 	var c0, y0 float64
 	for y, c := range ydist {
 		cf := float64(c)
@@ -55,7 +52,7 @@ func (s *Spectrum) Noise() float64 {
 		distdata[i][1] = cf
 		i++
 	}
-	// Now in this distribution [Y,C] sorted by Y's we are going to find the
+	// Now we have a distribution data [Y,C] sorted by Y's. We are going to find the
 	// full width at half-maximum (l for left and r fot right) and the counts
 	// peak center is what we are looking for.
 	sort.Sort(dataSorterX(distdata))
@@ -83,7 +80,7 @@ func (s *Spectrum) Noise() float64 {
 }
 
 // Calculate area under the spectrum with the trapezoidal method
-func (s *Spectrum) Area() float64 {
+func (s *XY) Area() float64 {
 	l := len(s.data)
 	data := make([][2]float64, l)
 	copy(s.data, data)
@@ -101,38 +98,38 @@ func (s *Spectrum) Area() float64 {
 }
 
 // Get X and Y of the first spectrum point
-func (s *Spectrum) FirstPoint() (float64, float64) {
+func (s *XY) FirstPoint() (float64, float64) {
 	return s.data[0][0], s.data[0][1]
 }
 
 // Get X and Y of the last spectrum point
-func (s *Spectrum) LastPoint() (float64, float64) {
+func (s *XY) LastPoint() (float64, float64) {
 	k := len(s.data) - 1
 	return s.data[k][0], s.data[k][1]
 }
 
 // The spectrum maximum point X Y
-func (s *Spectrum) MaxY() (float64, float64) {
+func (s *XY) MaxY() (float64, float64) {
 	x, y, _ := s.MaxAndEps()
 	return x, y
 }
 
-// The spectrum maximum point
-func (s *Spectrum) MaxAndEps() (float64, float64, float64) {
-	var xmax, ymax, eps float64
+// MaxAndEps returns the maximum point credentials
+func (s *XY) MaxAndEps() (xmax, ymax, eps float64) {
 	l := len(s.data)
 	if l == 0 {
 		log.Fatal("Empty data")
 	}
 	// Make a copy to modify freely
-	revdata := make([][2]float64, l)
-	copy(revdata, s.data)
-	sort.Sort(dataSorterY(revdata))
-	xmax = revdata[l-1][0]
-	ymax = revdata[l-1][1]
+	sortedByY := make([][2]float64, l)
+	copy(sortedByY, s.data)
+	sort.Sort(dataSorterY(sortedByY))
+	xmax = sortedByY[l-1][0]
+	ymax = sortedByY[l-1][1]
 	eps = ymax
-	for _, p := range revdata {
-		y := math.Abs(p[1])
+	// Search for the mimimum step for Y values
+	for _, point := range sortedByY {
+		y := math.Abs(point[1])
 		if y < eps && y != 0 {
 			eps = y
 		}
@@ -140,8 +137,9 @@ func (s *Spectrum) MaxAndEps() (float64, float64, float64) {
 	return xmax, ymax, eps
 }
 
-// Full width at half-maximum near the given X
-func (s *Spectrum) FWHM(x float64) float64 {
+// FWHM is full width at half-maximum near the given X
+// Not implemented yet
+func (s *XY) FWHM(x float64) float64 {
 	// Here I must calculate derivatives with noise-ignorant method such as
 	// Savitsky-Golay filter or Holoborodko's method
 	return 0.0

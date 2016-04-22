@@ -1,9 +1,5 @@
-// The code is provided "as is" without any warranty and whatever.
-// You are free to copy, use and redistribute the code in any way you wish.
-//
-// Evgeny Shevchenko
-// shvgn@protonmail.ch
-// 2015
+// Package xy is a simple library for manipulation of X,Y data
+
 package xy
 
 import (
@@ -23,11 +19,11 @@ func (d dataSorterY) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
 func (d dataSorterX) Less(i, j int) bool { return d[i][0] < d[j][0] }
 func (d dataSorterY) Less(i, j int) bool { return d[i][1] < d[j][1] }
 
-func (s *Spectrum) SortByX() { sort.Sort(dataSorterX(s.data)) }
-func (s *Spectrum) SortByY() { sort.Sort(dataSorterY(s.data)) }
+func (s *XY) SortByX() { sort.Sort(dataSorterX(s.data)) }
+func (s *XY) SortByY() { sort.Sort(dataSorterY(s.data)) }
 
 // Choose borders X1 and X2 to cut the spectrum X range
-func (s *Spectrum) Cut(x1, x2 float64) {
+func (s *XY) Cut(x1, x2 float64) {
 	// FIXME what about one-side cut?
 	i1, i2, err := FindBordersIndexes(s.data, x1, x2)
 	if err != nil {
@@ -37,7 +33,7 @@ func (s *Spectrum) Cut(x1, x2 float64) {
 }
 
 // Modifies X with arbitrary function, ensures sorted X after the modification
-func (s *Spectrum) ModifyX(f func(x float64) float64) {
+func (s *XY) ModifyX(f func(x float64) float64) {
 	for i := range s.data {
 		s.data[i][0] = f(s.data[i][0])
 	}
@@ -45,7 +41,7 @@ func (s *Spectrum) ModifyX(f func(x float64) float64) {
 }
 
 // Modifies Y with arbitrary function
-func (s *Spectrum) ModifyY(f func(x float64) float64) {
+func (s *XY) ModifyY(f func(x float64) float64) {
 	for i := range s.data {
 		s.data[i][1] = f(s.data[i][1])
 	}
@@ -71,7 +67,7 @@ func arithOpFunc(sym rune) func(float64, float64) float64 {
 
 // Function for arithmetic operation over two spectra. If X values do not
 // coincide the interpolation of the second specrum is used
-func doArithOperation(s1, s2 *Spectrum, op rune) error {
+func doArithOperation(s1, s2 *XY, op rune) error {
 	ol, err := newOverlap(s1, s2)
 
 	if err != nil {
@@ -144,21 +140,21 @@ func doArithOperation(s1, s2 *Spectrum, op rune) error {
 }
 
 // Adds spectrum to the current one
-func (s *Spectrum) Add(ss *Spectrum) error {
+func (s *XY) Add(ss *XY) error {
 	return doArithOperation(s, ss, '+')
 }
 
 // Subtract spectrum from the current one
-func (s *Spectrum) Subtract(ss *Spectrum) error {
+func (s *XY) Subtract(ss *XY) error {
 	return doArithOperation(s, ss, '-')
 }
 
 // Multiply spectrum by the current one
-func (s *Spectrum) Multiply(ss *Spectrum) error {
+func (s *XY) Multiply(ss *XY) error {
 	return doArithOperation(s, ss, '*')
 }
 
 // Divide spectrum by the current one
-func (s *Spectrum) Divide(ss *Spectrum) error {
+func (s *XY) Divide(ss *XY) error {
 	return doArithOperation(s, ss, '/')
 }
