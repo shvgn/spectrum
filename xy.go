@@ -1,5 +1,4 @@
 // Package xy is a simple library for manipulation of X,Y data
-
 package xy
 
 import (
@@ -16,7 +15,7 @@ import (
 	"strings"
 )
 
-/* Spectrum type
+/* dataset type
  * data is [][2]float64, like
  * [
  *    [x1, y1],
@@ -36,12 +35,12 @@ type XY struct {
 }
 
 // Constructor
-func NewSpectrum(capacity int) *XY {
+func Newdataset(capacity int) *XY {
 	spec := XY{make([][2]float64, capacity), make(map[string]string)}
 	return &spec
 }
 
-// Number of points in the spectrum data
+// Number of points in the dataset data
 func (s *XY) Len() int {
 	return len(s.data)
 }
@@ -81,10 +80,15 @@ func parseHeader(line string) (string, string) {
 	return header, value
 }
 
-// Read data file and return a new spectrum
-func SpectrumFromFile(fname string, cols ...int) (*XY, error) {
+// FromFile reads data from the passed TSV file path and returns a new dataset
+// cols is an abritrary array argument containing columns indexes starting from 1.
+// The elements are interpreted as follows
+// 		FromFile(fname string, xcol, ycol)
+// 		FromFile(fname string, ycol)
+// 		FromFile(fname string)
+func FromFile(fname string, cols ...int) (*XY, error) {
 	// So we received cols. Now we decide which numbers of columns to take into
-	// the spectrum. We keep numbers starting from 1 im order to print these
+	// the dataset. We keep numbers starting from 1 im order to print these
 	// numbers in the below error if it occurs.
 	var xcol, ycol int
 	switch len(cols) {
@@ -98,7 +102,7 @@ func SpectrumFromFile(fname string, cols ...int) (*XY, error) {
 		xcol = cols[0]
 		ycol = cols[1]
 	default:
-		log.Fatal("Incorrect number of entries in SpectrumFromFile")
+		log.Fatal("Incorrect number of entries in FromFile")
 	}
 	if xcol < 1 || ycol < 1 {
 		return nil, errors.New(
@@ -119,7 +123,7 @@ func SpectrumFromFile(fname string, cols ...int) (*XY, error) {
 	// We read with the TSV reader.
 	s, err := ReadFromTSV(fi, xcol, ycol)
 	if err != nil {
-		// Try read the spectrum in another way. Why we use TSV if this can
+		// Try read the dataset in another way. Why we use TSV if this can
 		// handle all cases?
 		var rawdata []byte
 		rawdata, err = ioutil.ReadFile(fname)
@@ -127,12 +131,12 @@ func SpectrumFromFile(fname string, cols ...int) (*XY, error) {
 			// fmt.Println("Cannot read file", fname, err.Error())
 			return nil, err
 		}
-		s, err = parseSpectrum(rawdata, xcol, ycol)
+		s, err = parsedataset(rawdata, xcol, ycol)
 	}
 	return s, err
 }
 
-// Reader for TSV files
+// NewTSVReader constructs a reader for TSV files
 func NewTSVReader(r io.Reader) *csv.Reader {
 	csvr := csv.NewReader(r)
 	csvr.Comma = '\t'
@@ -143,7 +147,7 @@ func NewTSVReader(r io.Reader) *csv.Reader {
 	return csvr
 }
 
-// Reading from TSV file, cols must contain numbers of columns to take into
+// ReadFromTSV reads from TSV file, cols must contain numbers of columns to take into
 // account. If cols consists of one integer, the integer value is taken as
 // number of the Y column. If cols consists of two integers, they are taken as
 // numbers of X and Y columns in the passed TSV. If cols is not passed, then X
@@ -160,10 +164,13 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*XY, error) {
 	if len(records[0]) < ycol+1 {
 		return nil, csv.ErrFieldCount
 	}
-	data := make([][2]float64, 0)
+	var (
+		data [][2]float64
+		i    int
+	)
 	meta := make(map[string]string)
 	entry := [2]string{}
-	var i int = 0
+
 	for _, e := range records {
 		entry[0] = e[xcol]
 		entry[1] = e[ycol]
@@ -183,7 +190,7 @@ func ReadFromTSV(r io.Reader, xcol, ycol int) (*XY, error) {
 }
 
 // Text parser
-func parseSpectrum(b []byte, xcol, ycol int) (*XY, error) {
+func parsedataset(b []byte, xcol, ycol int) (*XY, error) {
 
 	lines := strings.Split(string(b), "\n")
 	data := make([][2]float64, 0, len(lines))
@@ -223,7 +230,7 @@ func ParseFloat(s string) (float64, error) {
 	return strconv.ParseFloat(ns, 64)
 }
 
-// Write spectrum to a file
+// Write dataset to a file
 func (s *XY) WriteToFile(file string) error {
 	err := ioutil.WriteFile(file, []byte(s.String()), 0600)
 	if err != nil {
