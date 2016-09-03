@@ -29,12 +29,12 @@ func newOverlap(s1, s2 *XY) (ol *overlap, err error) {
 		return nil, errors.New("X ranges do not overlap")
 	}
 
-	ol.i1l, ol.i1r, err = FindBordersIndexes(s1.data, ol.xl, ol.xr)
+	ol.i1l, ol.i1r, err = findBordersIndexes(s1.data, ol.xl, ol.xr)
 	if err != nil {
 		return nil, err
 	}
 
-	ol.i2l, ol.i2r, err = FindBordersIndexes(s2.data, ol.xl, ol.xr)
+	ol.i2l, ol.i2r, err = findBordersIndexes(s2.data, ol.xl, ol.xr)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func newOverlap(s1, s2 *XY) (ol *overlap, err error) {
 // FindBordersIndexes finds borders of data. The data is assumed to be sorted. If x1 is
 // less then X minimum, i1 shall be 0, and in the same manner i2 will be the
 // last index of the data if x2 is bigger than X maximum.
-func FindBordersIndexes(data [][2]float64, x1, x2 float64) (i1, i2 int, err error) {
+func findBordersIndexes(data [][2]float64, x1, x2 float64) (i1, i2 int, err error) {
 	var found1, found2 bool
 
 	if x1 >= x2 {

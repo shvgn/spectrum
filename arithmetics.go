@@ -26,7 +26,7 @@ func (s *XY) SortByY() { sort.Sort(dataSorterY(s.data)) }
 // Cut chooses borders X1 and X2 to cut the spectrum X range
 func (s *XY) Cut(x1, x2 float64) {
 	// FIXME what about one-side cut?
-	i1, i2, err := FindBordersIndexes(s.data, x1, x2)
+	i1, i2, err := findBordersIndexes(s.data, x1, x2)
 	if err != nil {
 		log.Fatal("x1 cannot be bigger than x2")
 	}
