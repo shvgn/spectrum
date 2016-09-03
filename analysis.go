@@ -1,4 +1,3 @@
-// Package xy is a simple library for manipulation of X,Y data
 package xy
 
 import (
@@ -11,18 +10,13 @@ const (
 	precisionOrder int = 4 // Precision for rounding and calculations
 )
 
-// Rounding for float64
-func roundFloat64(f float64, prec int) float64 {
-	shift := math.Pow(10, float64(prec))
-	return math.Floor(f*shift+0.5) / shift
-}
-
-// Noise naively calculates noise level of the dataset according to its minimum Y values
-// distribution. The more noise in the dataset the better it is calculated
+// Noise naively calculates noise level of the dataset according to its Y values
+// distribution in the whiole X range. The more noise in the dataset the better it
+// is calculated. A sufficient baseline slope makes makes this method useless.
 func (s *XY) Noise() float64 {
 	ydist := map[float64]int{}
 	// Choose the precision
-	_, ymax, eps := s.MaxAndEps()
+	_, ymax, eps := s.Max()
 	prec := int(math.Log10(ymax / eps))
 	if prec < precisionOrder {
 		prec = precisionOrder
@@ -78,7 +72,7 @@ func (s *XY) Noise() float64 {
 	return 0.5 * (yl + yr)
 }
 
-// Calculate area under the spectrum with the trapezoidal method
+// Area between the curve and X axis calculated with trapezoidal method
 func (s *XY) Area() float64 {
 	l := len(s.data)
 	data := make([][2]float64, l)
@@ -96,25 +90,19 @@ func (s *XY) Area() float64 {
 
 }
 
-// Get X and Y of the first spectrum point
+// FirstPoint gives X and Y of the first point
 func (s *XY) FirstPoint() (float64, float64) {
 	return s.data[0][0], s.data[0][1]
 }
 
-// Get X and Y of the last spectrum point
+// LastPoint gives X and Y of the last point
 func (s *XY) LastPoint() (float64, float64) {
 	k := len(s.data) - 1
 	return s.data[k][0], s.data[k][1]
 }
 
-// The spectrum maximum point X Y
-func (s *XY) MaxY() (float64, float64) {
-	x, y, _ := s.MaxAndEps()
-	return x, y
-}
-
-// MaxAndEps returns the maximum point credentials
-func (s *XY) MaxAndEps() (xmax, ymax, eps float64) {
+// Max returns the maximum point credentials
+func (s *XY) Max() (xmax, ymax, eps float64) {
 	l := len(s.data)
 	if l == 0 {
 		log.Fatal("Empty data")
@@ -136,8 +124,7 @@ func (s *XY) MaxAndEps() (xmax, ymax, eps float64) {
 	return xmax, ymax, eps
 }
 
-// FWHM is full width at half-maximum near the given X
-// Not implemented yet
+// FWHM (not implemented) is full width at half-maximum near the given X
 func (s *XY) FWHM(x float64) float64 {
 	// Here I must calculate derivatives with noise-ignorant method such as
 	// Savitsky-Golay filter or Holoborodko's method

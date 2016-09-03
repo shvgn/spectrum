@@ -1,9 +1,8 @@
-// Package xy is a simple library for manipulation of X,Y data
 package xy
 
 import "testing"
 
-var sp1 XY = XY{
+var sp1 = XY{
 	[][2]float64{
 		[2]float64{1.0, 5.34047454734599},
 		[2]float64{2.0, 5.56134762834134},
@@ -27,7 +26,7 @@ var sp1 XY = XY{
 		[2]float64{20.0, 9.86752255959972}}, nil}
 
 // Shifted X of sp1, the same function
-var sp1s XY = XY{
+var sp1s = XY{
 	[][2]float64{
 		[2]float64{1.431, 5.42442917648117},
 		[2]float64{2.431, 5.68780485174319},
@@ -50,7 +49,7 @@ var sp1s XY = XY{
 		[2]float64{19.431, 10.5437428259392},
 		[2]float64{20.431, 9.372915167086}}, nil}
 
-var sp2 XY = XY{
+var sp2 = XY{
 	[][2]float64{
 		[2]float64{1.0, 5.13945037358082},
 		[2]float64{2.0, 5.35474279421912},

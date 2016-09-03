@@ -1,4 +1,3 @@
-// Package xy is a simple library for manipulation of X,Y data
 package xy
 
 import (

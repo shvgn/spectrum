@@ -1,4 +1,3 @@
-// Package xy is a simple library for manipulation of X,Y data
 package xy
 
 import (
@@ -18,10 +17,13 @@ func (d dataSorterY) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
 func (d dataSorterX) Less(i, j int) bool { return d[i][0] < d[j][0] }
 func (d dataSorterY) Less(i, j int) bool { return d[i][1] < d[j][1] }
 
+// SortByX sorts the data by X in scending order
 func (s *XY) SortByX() { sort.Sort(dataSorterX(s.data)) }
+
+// SortByY sorts the data by Y in scending order
 func (s *XY) SortByY() { sort.Sort(dataSorterY(s.data)) }
 
-// Choose borders X1 and X2 to cut the spectrum X range
+// Cut chooses borders X1 and X2 to cut the spectrum X range
 func (s *XY) Cut(x1, x2 float64) {
 	// FIXME what about one-side cut?
 	i1, i2, err := FindBordersIndexes(s.data, x1, x2)
@@ -31,7 +33,7 @@ func (s *XY) Cut(x1, x2 float64) {
 	s.data = s.data[i1 : i2+1]
 }
 
-// Modifies X with arbitrary function, ensures sorted X after the modification
+// ModifyX applies arbitrary function to X and ensures sorted X after the modification
 func (s *XY) ModifyX(f func(x float64) float64) {
 	for i := range s.data {
 		s.data[i][0] = f(s.data[i][0])
@@ -39,7 +41,7 @@ func (s *XY) ModifyX(f func(x float64) float64) {
 	s.SortByX()
 }
 
-// Modifies Y with arbitrary function
+// ModifyY applies arbitrary function to Y
 func (s *XY) ModifyY(f func(x float64) float64) {
 	for i := range s.data {
 		s.data[i][1] = f(s.data[i][1])
@@ -64,17 +66,18 @@ func arithOpFunc(sym rune) func(float64, float64) float64 {
 	return nil
 }
 
-// Function for arithmetic operation over two spectra. If X values do not
-// coincide the interpolation of the second specrum is used
-func doArithOperation(s1, s2 *XY, op rune) error {
-	ol, err := newOverlap(s1, s2)
+// Function for arithmetic operation over Y's of two datasets (ds1 and ds2). If their
+// X values don't coincide, this function will interpolatie Y of ds2 over X of ds1
+// Thus the result always inherits X of ds1.
+func doArithOperation(ds1, ds2 *XY, op rune) error {
+	ol, err := newOverlap(ds1, ds2)
 
 	if err != nil {
 		log.Println("Error in overlap")
 		log.Println("Headers of s1:")
-		log.Println(s1.meta)
+		log.Println(ds1.meta)
 		log.Println("Headers of s2:")
-		log.Println(s2.meta)
+		log.Println(ds2.meta)
 		return err
 	}
 
@@ -82,9 +85,9 @@ func doArithOperation(s1, s2 *XY, op rune) error {
 	l1 := ol.i1r - ol.i1l + 1
 	l2 := ol.i2r - ol.i2l + 1
 
-	data := make([][2]float64, l1, l1) // The result size will be the one of s1
-	data1 := s1.data[ol.i1l : ol.i1r+1]
-	data2 := s2.data[ol.i2l : ol.i2r+1]
+	data := make([][2]float64, l1, l1) // The result size will be the one of ds1
+	data1 := ds1.data[ol.i1l : ol.i1r+1]
+	data2 := ds2.data[ol.i2l : ol.i2r+1]
 
 	// First we shall see if X axes coincise and spectra can be operated. This
 	// is useful for data obtained on one setup. If l1 == l2 then X1 and X2
@@ -103,7 +106,7 @@ func doArithOperation(s1, s2 *XY, op rune) error {
 			data[j] = [2]float64{x1, f(y1, y2)}
 		}
 		if ok {
-			s1.data = data // Here we cut s1
+			ds1.data = data // Here we cut s1
 			return nil
 		}
 	}
@@ -134,7 +137,7 @@ func doArithOperation(s1, s2 *XY, op rune) error {
 	for i, x := range xa1 {
 		data[i] = [2]float64{x, f(ya1[i], ya2[i])}
 	}
-	s1.data = data
+	ds1.data = data
 	return nil
 }
 

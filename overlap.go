@@ -11,8 +11,8 @@ type overlap struct {
 	i1l, i1r, i2l, i2r int // Indices of the boundary elements
 }
 
-// newOverlap checks whether two spectra overlap. If the do, the function
-// returns the overlap structure or returns an error otherwise
+// newOverlap checks whether two spectra overlap. If they do, the function
+// returns an overlap structure or returns an error otherwise
 func newOverlap(s1, s2 *XY) (ol *overlap, err error) {
 	ol = new(overlap)
 
@@ -41,7 +41,7 @@ func newOverlap(s1, s2 *XY) (ol *overlap, err error) {
 	return ol, nil
 }
 
-// Find indices of data borders. The data is assumed to be sorted. If x1 is
+// FindBordersIndexes finds borders of data. The data is assumed to be sorted. If x1 is
 // less then X minimum, i1 shall be 0, and in the same manner i2 will be the
 // last index of the data if x2 is bigger than X maximum.
 func FindBordersIndexes(data [][2]float64, x1, x2 float64) (i1, i2 int, err error) {

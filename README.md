@@ -1,5 +1,6 @@
 XY
 ========
+[![GoDoc](https://godoc.org/github.com/shvgn/xy?status.svg)](https://godoc.org/github.com/shvgn/xy)
 
 A library for handling two-column numeric data [X,Y]
 
