@@ -141,7 +141,7 @@ func doArithOperation(ds1, ds2 *XY, op rune) error {
 	return nil
 }
 
-// Adds spectrum to the current one
+// Add spectrum to the current one
 func (s *XY) Add(ss *XY) error {
 	return doArithOperation(s, ss, '+')
 }
