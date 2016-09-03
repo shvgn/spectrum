@@ -11,6 +11,8 @@ import (
 
 // FromFile reads data from the passed TSV file path and returns a new dataset
 // cols is an abritrary array argument containing columns indexes starting from 1.
+// If cols is not passed, then X defaults to 1 and Y defaults to 2 as in ordinar
+// 2-column ASCII TSV file. If len(cols)>2, the error is returned
 // The elements are interpreted as follows
 // 		FromFile(fname string, xcol, ycol)
 // 		FromFile(fname string, ycol)
@@ -49,7 +51,7 @@ func FromFile(fname string, cols ...int) (*XY, error) {
 	defer fi.Close()
 
 	// We read with the TSV reader.
-	s, err := ReadFromTSV(fi, xcol, ycol)
+	s, err := readFromTSV(fi, xcol, ycol)
 	if err != nil {
 		// Try read the dataset in another way.
 		// FIXME Why we use TSV if this can handle all cases?
@@ -75,13 +77,8 @@ func newTSVReader(r io.Reader) *csv.Reader {
 	return csvr
 }
 
-// ReadFromTSV reads from TSV file, cols must contain numbers of columns to take into
-// account. If cols consists of one integer, the integer value is taken as
-// number of the Y column. If cols consists of two integers, they are taken as
-// numbers of X and Y columns in the passed TSV. If cols is not passed, then X
-// defaults to 1 and Y defaults to 2 as in ordinar 2-column ASCII TSV file. If
-// len(cols)>2, the error is returned
-func ReadFromTSV(r io.Reader, xcol, ycol int) (*XY, error) {
+// readFromTSV reads TSV file and takes columns for X and Y numbered from 1
+func readFromTSV(r io.Reader, xcol, ycol int) (*XY, error) {
 	tsvreader := newTSVReader(r)
 	records, err := tsvreader.ReadAll() // [][]string
 	if err != nil {
