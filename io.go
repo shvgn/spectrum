@@ -64,8 +64,8 @@ func FromFile(fname string, cols ...int) (*XY, error) {
 	return s, err
 }
 
-// NewTSVReader constructs a reader for TSV files
-func NewTSVReader(r io.Reader) *csv.Reader {
+// newTSVReader constructs a reader for TSV files
+func newTSVReader(r io.Reader) *csv.Reader {
 	csvr := csv.NewReader(r)
 	csvr.Comma = '\t'
 	csvr.Comment = commentPrefix
@@ -82,7 +82,7 @@ func NewTSVReader(r io.Reader) *csv.Reader {
 // defaults to 1 and Y defaults to 2 as in ordinar 2-column ASCII TSV file. If
 // len(cols)>2, the error is returned
 func ReadFromTSV(r io.Reader, xcol, ycol int) (*XY, error) {
-	tsvreader := NewTSVReader(r)
+	tsvreader := newTSVReader(r)
 	records, err := tsvreader.ReadAll() // [][]string
 	if err != nil {
 		return nil, err
